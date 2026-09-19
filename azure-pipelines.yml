@@ -17,7 +17,7 @@ steps:
 
 
 # ============================================================
-# 2. Python
+# 2. Setup Python
 # ============================================================
 - task: UsePythonVersion@0
   inputs:
@@ -38,7 +38,7 @@ steps:
 
 
 # ============================================================
-# 4. Test + Coverage
+# 4. Run tests and generate coverage
 # ============================================================
 - script: |
     pytest \
@@ -63,7 +63,7 @@ steps:
 
 
 # ============================================================
-# 6. Publish coverage
+# 6. Publish code coverage
 # ============================================================
 - task: PublishCodeCoverageResults@2
   inputs:
@@ -76,7 +76,20 @@ steps:
 
 
 # ============================================================
-# 7. Prepare SonarQube
+# 7. Display branch information
+# ============================================================
+- script: |
+    echo "========================================"
+    echo "AZURE DEVOPS BRANCH"
+    echo "========================================"
+    echo "Build.SourceBranch     = $(Build.SourceBranch)"
+    echo "Build.SourceBranchName = $(Build.SourceBranchName)"
+    echo "Build.Reason            = $(Build.Reason)"
+  displayName: 'Check Azure DevOps Branch'
+
+
+# ============================================================
+# 8. Prepare SonarQube
 # ============================================================
 - task: SonarQubePrepare@8
   inputs:
@@ -84,13 +97,11 @@ steps:
     scannerMode: 'cli'
     configMode: 'file'
     configFile: 'sonar-project.properties'
-    extraProperties: |
-      sonar.branch.name=
   displayName: 'Prepare SonarQube Analysis'
 
 
 # ============================================================
-# 8. SonarQube Analysis
+# 9. Run SonarQube
 # ============================================================
 - task: SonarQubeAnalyze@8
   inputs:
@@ -99,7 +110,7 @@ steps:
 
 
 # ============================================================
-# 9. Quality Gate
+# 10. Publish Quality Gate
 # ============================================================
 - task: SonarQubePublish@8
   inputs:
