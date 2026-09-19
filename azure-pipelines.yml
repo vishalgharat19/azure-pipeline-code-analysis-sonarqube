@@ -1,5 +1,5 @@
 trigger:
-- main
+  - main
 
 pr: none
 
@@ -8,69 +8,69 @@ pool:
 
 steps:
 
-# Checkout
+# ============================================================
+# 1. Checkout source code
+# ============================================================
 - checkout: self
   fetchDepth: 0
+  displayName: 'Checkout Source Code'
 
-# Setup Python
+
+# ============================================================
+# 2. Setup Python
+# ============================================================
 - task: UsePythonVersion@0
   inputs:
     versionSpec: '3.12'
-  displayName: 'Setup Python'
+  displayName: 'Setup Python 3.12'
 
-# Install Dependencies
+
+# ============================================================
+# 3. Install dependencies
+# ============================================================
 - script: |
     python -m pip install --upgrade pip
     pip install -r requirements.txt
     pip install pytest pytest-cov
   displayName: 'Install Dependencies'
 
-# Run Tests + Generate Coverage
+
+# ============================================================
+# 4. Run tests + generate coverage
+# ============================================================
 - script: |
-    pytest --cov=. --cov-report=xml
+    pytest \
+      --cov=. \
+      --cov-report=xml:coverage.xml \
+      --cov-report=term
   displayName: 'Run Tests and Generate Coverage'
 
-# Prepare SonarQube
+
+# ============================================================
+# 5. Prepare SonarQube
+# ============================================================
 - task: SonarQubePrepare@8
   inputs:
     SonarQube: 'sonar-connection'
     scannerMode: 'cli'
     configMode: 'file'
+    configFile: 'sonar-project.properties'
   displayName: 'Prepare SonarQube Analysis'
 
-# IMPORTANT:
-# Remove sonar.branch.name automatically injected by Azure DevOps
-- bash: |
-    python <<'PY'
-    import json
-    import os
 
-    raw = os.environ.get("SONARQUBE_SCANNER_PARAMS", "{}")
-    params = json.loads(raw)
-
-    if "sonar.branch.name" in params:
-        del params["sonar.branch.name"]
-        print("Removed sonar.branch.name")
-    else:
-        print("sonar.branch.name was not present")
-
-    value = json.dumps(params, separators=(',', ':'))
-
-    print(
-        "##vso[task.setvariable variable=SONARQUBE_SCANNER_PARAMS]"
-        + value
-    )
-    PY
-  displayName: 'Remove sonar.branch.name'
-
-# Run SonarQube Analysis
+# ============================================================
+# 6. Run SonarQube Analysis
+# ============================================================
 - task: SonarQubeAnalyze@8
   inputs:
     jdkversion: 'JAVA_HOME_17_X64'
   displayName: 'Run SonarQube Analysis'
 
-# Publish Quality Gate
+
+# ============================================================
+# 7. Publish SonarQube Quality Gate
+# ============================================================
 - task: SonarQubePublish@8
   inputs:
     pollingTimeoutSec: '300'
-  displayName: 'Publish Quality Gate'
+  displayName: 'Publish SonarQube Quality Gate'
