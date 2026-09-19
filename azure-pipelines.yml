@@ -51,7 +51,7 @@ steps:
 # ============================================================
 - task: SonarQubePrepare@8
   inputs:
-    SonarQube: 'sonar-connection'
+    SonarQube: 'sonarqube-connection'
     scannerMode: 'cli'
     configMode: 'file'
     configFile: 'sonar-project.properties'
