@@ -22,32 +22,60 @@ steps:
 - task: UsePythonVersion@0
   inputs:
     versionSpec: '3.12'
+    addToPath: true
+    architecture: 'x64'
   displayName: 'Setup Python 3.12'
 
 
 # ============================================================
-# 3. Install dependencies
+# 3. Upgrade pip and install dependencies
 # ============================================================
 - script: |
     python -m pip install --upgrade pip
     pip install -r requirements.txt
     pip install pytest pytest-cov
-  displayName: 'Install Dependencies'
+  displayName: 'Install Python Dependencies'
 
 
 # ============================================================
-# 4. Run tests + generate coverage
+# 4. Run Unit Tests + Code Coverage
 # ============================================================
 - script: |
     pytest \
       --cov=. \
       --cov-report=xml:coverage.xml \
-      --cov-report=term
+      --cov-report=term-missing \
+      --junitxml=test-results.xml
   displayName: 'Run Tests and Generate Coverage'
 
 
 # ============================================================
-# 5. Prepare SonarQube
+# 5. Publish Test Results
+# ============================================================
+- task: PublishTestResults@2
+  inputs:
+    testResultsFormat: 'JUnit'
+    testResultsFiles: 'test-results.xml'
+    failTaskOnFailedTests: true
+    testRunTitle: 'Python Unit Tests'
+  condition: succeededOrFailed()
+  displayName: 'Publish Test Results'
+
+
+# ============================================================
+# 6. Publish Code Coverage
+# ============================================================
+- task: PublishCodeCoverage@2
+  inputs:
+    codeCoverageTool: 'Cobertura'
+    summaryFileLocation: '$(System.DefaultWorkingDirectory)/coverage.xml'
+    reportDirectory: '$(System.DefaultWorkingDirectory)'
+  condition: succeededOrFailed()
+  displayName: 'Publish Code Coverage'
+
+
+# ============================================================
+# 7. Prepare SonarQube
 # ============================================================
 - task: SonarQubePrepare@8
   inputs:
@@ -59,7 +87,7 @@ steps:
 
 
 # ============================================================
-# 6. Run SonarQube Analysis
+# 8. Run SonarQube Analysis
 # ============================================================
 - task: SonarQubeAnalyze@8
   inputs:
@@ -68,7 +96,7 @@ steps:
 
 
 # ============================================================
-# 7. Publish SonarQube Quality Gate
+# 9. Publish SonarQube Quality Gate
 # ============================================================
 - task: SonarQubePublish@8
   inputs:
