@@ -6,10 +6,13 @@ pr: none
 pool:
   vmImage: 'ubuntu-24.04'
 
+variables:
+  SonarQubeAnalysisBranch: 'refs/heads/main'
+
 steps:
 
 # ============================================================
-# 1. Checkout
+# 1. Checkout source code
 # ============================================================
 - checkout: self
   fetchDepth: 0
@@ -38,7 +41,7 @@ steps:
 
 
 # ============================================================
-# 4. Run tests and generate coverage
+# 4. Run tests + generate coverage
 # ============================================================
 - script: |
     pytest \
@@ -76,22 +79,24 @@ steps:
 
 
 # ============================================================
-# 7. Display branch information
+# 7. Verify branch
 # ============================================================
 - script: |
-    echo "========================================"
-    echo "AZURE DEVOPS BRANCH"
-    echo "========================================"
+    echo "=============================================="
+    echo "Azure DevOps Branch Information"
+    echo "=============================================="
     echo "Build.SourceBranch     = $(Build.SourceBranch)"
     echo "Build.SourceBranchName = $(Build.SourceBranchName)"
-    echo "Build.Reason            = $(Build.Reason)"
-  displayName: 'Check Azure DevOps Branch'
+    echo "Build.Reason           = $(Build.Reason)"
+    echo "=============================================="
+  displayName: 'Verify Build Branch'
 
 
 # ============================================================
 # 8. Prepare SonarQube
 # ============================================================
 - task: SonarQubePrepare@8
+  condition: eq(variables['Build.SourceBranch'], variables['SonarQubeAnalysisBranch'])
   inputs:
     SonarQube: 'sonarqube-connection'
     scannerMode: 'cli'
@@ -101,18 +106,51 @@ steps:
 
 
 # ============================================================
-# 9. Run SonarQube
+# 9. Remove automatically injected sonar.branch.name
+#    Required for SonarQube Community Edition
+# ============================================================
+- task: PowerShell@2
+  condition: eq(variables['Build.SourceBranch'], variables['SonarQubeAnalysisBranch'])
+  displayName: 'Remove SonarQube Branch Parameter'
+  inputs:
+    targetType: 'inline'
+    script: |
+      Write-Host "Checking SonarQube scanner parameters..."
+
+      if ($env:SONARQUBE_SCANNER_PARAMS) {
+          Write-Host "SONARQUBE_SCANNER_PARAMS detected."
+
+          $params = $env:SONARQUBE_SCANNER_PARAMS
+
+          Write-Host "Removing sonar.branch.name..."
+
+          $params = $params -replace '"sonar.branch.name":"[^"]*",?', ''
+
+          Write-Host "Updated SonarQube scanner parameters:"
+          Write-Host $params
+
+          Write-Host "##vso[task.setvariable variable=SONARQUBE_SCANNER_PARAMS]$params"
+      }
+      else {
+          Write-Host "SONARQUBE_SCANNER_PARAMS is not present."
+      }
+
+
+# ============================================================
+# 10. Run SonarQube Analysis
 # ============================================================
 - task: SonarQubeAnalyze@8
+  condition: eq(variables['Build.SourceBranch'], variables['SonarQubeAnalysisBranch'])
   inputs:
     jdkversion: 'JAVA_HOME_17_X64'
   displayName: 'Run SonarQube Analysis'
 
 
 # ============================================================
-# 10. Publish Quality Gate
+# 11. Publish SonarQube Quality Gate
 # ============================================================
 - task: SonarQubePublish@8
+  condition: eq(variables['Build.SourceBranch'], variables['SonarQubeAnalysisBranch'])
   inputs:
     pollingTimeoutSec: '300'
   displayName: 'Publish SonarQube Quality Gate'
