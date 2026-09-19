@@ -4,12 +4,12 @@ trigger:
 pr: none
 
 pool:
-  vmImage: 'ubuntu-latest'
+  vmImage: 'ubuntu-24.04'
 
 steps:
 
 # ============================================================
-# 1. Checkout source code
+# 1. Checkout
 # ============================================================
 - checkout: self
   fetchDepth: 0
@@ -17,7 +17,7 @@ steps:
 
 
 # ============================================================
-# 2. Setup Python 3.12
+# 2. Python
 # ============================================================
 - task: UsePythonVersion@0
   inputs:
@@ -28,7 +28,7 @@ steps:
 
 
 # ============================================================
-# 3. Install Python dependencies
+# 3. Install dependencies
 # ============================================================
 - script: |
     python -m pip install --upgrade pip
@@ -38,7 +38,7 @@ steps:
 
 
 # ============================================================
-# 4. Run tests and generate coverage
+# 4. Test + Coverage
 # ============================================================
 - script: |
     pytest \
@@ -63,7 +63,7 @@ steps:
 
 
 # ============================================================
-# 6. Publish code coverage
+# 6. Publish coverage
 # ============================================================
 - task: PublishCodeCoverageResults@2
   inputs:
@@ -84,11 +84,13 @@ steps:
     scannerMode: 'cli'
     configMode: 'file'
     configFile: 'sonar-project.properties'
+    extraProperties: |
+      sonar.branch.name=
   displayName: 'Prepare SonarQube Analysis'
 
 
 # ============================================================
-# 8. Run SonarQube analysis
+# 8. SonarQube Analysis
 # ============================================================
 - task: SonarQubeAnalyze@8
   inputs:
@@ -97,7 +99,7 @@ steps:
 
 
 # ============================================================
-# 9. Publish SonarQube Quality Gate
+# 9. Quality Gate
 # ============================================================
 - task: SonarQubePublish@8
   inputs:
