@@ -28,7 +28,7 @@ steps:
 
 
 # ============================================================
-# 3. Upgrade pip and install dependencies
+# 3. Install dependencies
 # ============================================================
 - script: |
     python -m pip install --upgrade pip
@@ -38,7 +38,7 @@ steps:
 
 
 # ============================================================
-# 4. Run Unit Tests + Code Coverage
+# 4. Run tests + generate coverage
 # ============================================================
 - script: |
     pytest \
@@ -50,7 +50,7 @@ steps:
 
 
 # ============================================================
-# 5. Publish Test Results
+# 5. Publish test results
 # ============================================================
 - task: PublishTestResults@2
   inputs:
@@ -63,13 +63,14 @@ steps:
 
 
 # ============================================================
-# 6. Publish Code Coverage
+# 6. Publish code coverage
 # ============================================================
-- task: PublishCodeCoverage@2
+- task: PublishCodeCoverageResults@2
   inputs:
     codeCoverageTool: 'Cobertura'
     summaryFileLocation: '$(System.DefaultWorkingDirectory)/coverage.xml'
     reportDirectory: '$(System.DefaultWorkingDirectory)'
+    failIfCoverageEmpty: true
   condition: succeededOrFailed()
   displayName: 'Publish Code Coverage'
 
@@ -87,7 +88,7 @@ steps:
 
 
 # ============================================================
-# 8. Run SonarQube Analysis
+# 8. Run SonarQube analysis
 # ============================================================
 - task: SonarQubeAnalyze@8
   inputs:
