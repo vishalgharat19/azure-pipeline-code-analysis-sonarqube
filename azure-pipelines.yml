@@ -17,7 +17,7 @@ steps:
 
 
 # ============================================================
-# 2. Setup Python
+# 2. Setup Python 3.12
 # ============================================================
 - task: UsePythonVersion@0
   inputs:
@@ -28,17 +28,17 @@ steps:
 
 
 # ============================================================
-# 3. Install dependencies
+# 3. Install Python dependencies
 # ============================================================
 - script: |
     python -m pip install --upgrade pip
     pip install -r requirements.txt
     pip install pytest pytest-cov
-  displayName: 'Install Python Dependencies'
+  displayName: 'Install Dependencies'
 
 
 # ============================================================
-# 4. Run tests + generate coverage
+# 4. Run tests and generate coverage
 # ============================================================
 - script: |
     pytest \
